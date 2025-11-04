@@ -9,13 +9,17 @@ import kotlinx.coroutines.launch
 
 class MainViewModel: ViewModel() {
     init {
-        _fetchCategories()
+        fetchCategories()
     }
     private val _categoriesState = mutableStateOf(recipeState())
+    private val _mealState = mutableStateOf(mealState())
+    private val _recipeState = mutableStateOf(mealRecipeState())
+
 
     val categoriesState: State<recipeState> = _categoriesState
-
-    private fun _fetchCategories(){
+    val mealsState: State<mealState> = _mealState
+    val RecipeState: State<mealRecipeState> = _recipeState
+     fun fetchCategories(){
         viewModelScope.launch {
             try{
                 val response = recipeService.getCategories()
@@ -33,10 +37,73 @@ class MainViewModel: ViewModel() {
             }
         }
     }
+
+    fun fetchMeals(categorySelected: String?){
+        viewModelScope.launch {
+            try{
+                val mealResponse = mealService.getMeals(categorySelected = categorySelected)
+                _mealState.value = _mealState.value.copy(
+                    loading = false,
+                    list = mealResponse.meals,
+                    error = null
+                )
+            }
+            catch(e: Exception){
+                _mealState.value = mealsState.value.copy(
+                    loading = false,
+                    error = "An error occurred while fetching categories"
+                )
+            }
+        }
+    }
+
+    fun fetchRecipe(mealSelected: String?){
+        viewModelScope.launch {
+            try{
+                val recipeResponse = RecipeService.getrecipe(mealSelected)
+
+                _recipeState.value = _recipeState.value.copy(
+                    loading = false,
+                    list = recipeResponse.meals,
+                    error=null
+                )
+
+            }catch(e: Exception){
+                _recipeState.value = _recipeState.value.copy(
+                    loading = false,
+
+                    error=null
+                )
+            }
+        }
+    }
+
+
+
     data class recipeState(
         var loading: Boolean =true,
         val list: List<Category> = emptyList(),
-        val error: String? = null
+        val error: String? = null,
+
     )
+
+     data class mealState(
+         var loading: Boolean =true,
+         val list: List<Meal> = emptyList(),
+         val error: String? = null,
+
+    )
+
+data class mealRecipeState(
+    var loading: Boolean =true,
+    val list: List<Meals> = emptyList(),
+    val error: String? = null,
+
+    )
+
+
+
+
+
 
 }
